@@ -110,14 +110,17 @@ def readdzt(infile, gps=False, spm=None, epsr=None, verbose=False):
     header['rhf_depth'] = header['dzt_depth'] * (math.sqrt(header['dzt_epsr']) / math.sqrt(header['rhf_epsr'])) # range based on user epsr
     #rhf_coordx = struct.unpack('<ff', infile.read(8))[0] # this is definitely useless
 
-    # read frequencies for multiple antennae
+    # read frequencies for multiple antennae (This finds the antenna type of the current scan and find the center frequency)
+    """
     for chan in list(range(header['rh_nchan'])):
         if chan == 0:
             infile.seek(98) # start of antenna section
         else:
             infile.seek(98 + (MINHEADSIZE*(chan))) # start of antenna bytes for channel n
-        header['rh_ant'][chan] = infile.read(14).decode('utf-8').split('\x00')[0]
-        header['rh_antname'][chan] = header['rh_ant'][chan].rsplit('x')[0]
+
+        # TODO: Find out why rh_antname doesn't show up
+        header['rh_ant'][chan] = infile.read(14).decode('utf-8').split('\x00')[0] # This is some other identifying number
+        header['rh_antname'][chan] = header['rh_ant'][chan].rsplit('x')[0] # This is the names of the current antenna
         try:
             header['antfreq'][chan] = ANT[header['rh_antname'][chan]]
             header['known_ant'][chan] = True
@@ -125,6 +128,13 @@ def readdzt(infile, gps=False, spm=None, epsr=None, verbose=False):
             header['known_ant'][chan] = False
             header['antfreq'][chan] = int("".join(takewhile(str.isdigit, header['rh_ant'][chan].replace('D5','').replace('D6','')))) # hoping this works
             #header['antfreq'][chan] = int(header['rh_antname'][chan].replace('D5','').replace('D6',''))
+    """
+    # This is BirsView modification to enable the library to work with GSSI Mini XT
+
+    header['rh_ant'] = None
+    header['rh_antname'] = '62300XT'
+    header['antfreq'] = 2300
+    header['known_ant'] = True
 
     infile.seek(113) # skip to something that matters
     vsbyte = infile.read(1) # byte containing versioning bits
